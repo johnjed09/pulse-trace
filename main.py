@@ -51,7 +51,12 @@ def track_visit(
     log_data: VisitLogCreate, request: Request, db: Session = Depends(get_session)
 ):
     db_log = VisitLog.model_validate(log_data)
-    db_log.ip_address = request.client.host if request.client else None
+
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        db_log.ip_address = forwarded_for.split(",")[0].strip()
+    else:
+        db_log.ip_address = request.client.host if request.client else None
 
     db.add(db_log)
     db.commit()
